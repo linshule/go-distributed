@@ -1,9 +1,8 @@
 package registry
 
 type Registration struct {
-	ServiceName ServiceName
-	ServiceUrl  string
-	// RequiredNodes int    `json:"required_nodes" validate:"required"`
+	ServiceName ServiceName `json:"serviceName"`
+	ServiceUrl  string      `json:"serviceUrl"`
 }
 
 type ServiceName string
