@@ -1,12 +1,16 @@
 package library
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"sync"
 )
+
+// LogServiceURL 日志服务地址
+var LogServiceURL = "http://localhost:4000/log"
 
 // Book 书籍结构
 type Book struct {
@@ -40,6 +44,8 @@ func (l *library) addBook(book Book) error {
 		return fmt.Errorf("book %s already exists", book.ID)
 	}
 	l.books[book.ID] = book
+	// 发送添加书籍日志
+	sendLog(fmt.Sprintf("Book added: ID=%s, Title=%s, Author=%s", book.ID, book.Title, book.Author))
 	return nil
 }
 
@@ -70,6 +76,8 @@ func (l *library) borrowBook(record BorrowRecord) error {
 		return fmt.Errorf("book %s not found", record.BookID)
 	}
 	l.borrowRecords = append(l.borrowRecords, record)
+	// 发送借阅日志
+	sendLog(fmt.Sprintf("Book borrowed: BookID=%s, Borrower=%s", record.BookID, record.Borrower))
 	return nil
 }
 
@@ -180,10 +188,24 @@ func GetBorrowRecords() []BorrowRecord {
 	return lib.getBorrowRecords()
 }
 
+// sendLog 发送日志到日志服务
+func sendLog(message string) {
+	buf := bytes.NewBuffer([]byte(message))
+	resp, err := http.Post(LogServiceURL, "text/plain", buf)
+	if err != nil {
+		log.Printf("Failed to send log: %v\n", err)
+		return
+	}
+	defer resp.Body.Close()
+}
+
 // 初始化一些示例数据
 func init() {
 	// 添加一些示例书籍
 	lib.books["1"] = Book{ID: "1", Title: "Go编程实战", Author: "张三"}
 	lib.books["2"] = Book{ID: "2", Title: "分布式系统设计", Author: "李四"}
 	lib.books["3"] = Book{ID: "3", Title: "HTTP协议详解", Author: "王五"}
+
+	// 发送启动日志
+	sendLog("LibraryService started")
 }
