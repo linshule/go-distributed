@@ -184,7 +184,7 @@ var webPage = `
                 return;
             }
             try {
-                const response = await fetch('http://localhost:4000/log', {
+                const response = await fetch('/proxy/log', {
                     method: 'POST',
                     body: message
                 });
@@ -201,7 +201,7 @@ var webPage = `
 
         async function listBooks() {
             try {
-                const response = await fetch('http://localhost:5000/library/books');
+                const response = await fetch('/proxy/books');
                 const books = await response.json();
                 const container = document.getElementById('library-result');
                 container.innerHTML = '<h3>图书列表</h3>' +
@@ -213,7 +213,7 @@ var webPage = `
 
         async function listBorrowRecords() {
             try {
-                const response = await fetch('http://localhost:5000/library/borrow');
+                const response = await fetch('/proxy/borrow');
                 const records = await response.json();
                 const container = document.getElementById('library-result');
                 container.innerHTML = '<h3>借阅记录</h3>' +
@@ -260,6 +260,36 @@ func (w webServer) ServeHTTP(wr http.ResponseWriter, r *http.Request) {
 		}
 		wr.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(wr).Encode(regs)
+	case "/proxy/log":
+		// 代理日志服务
+		resp, err := http.Post("http://localhost:4000/log", "text/plain", r.Body)
+		if err != nil {
+			wr.WriteHeader(http.StatusBadGateway)
+			return
+		}
+		defer resp.Body.Close()
+		wr.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(wr).Encode(map[string]string{"status": "ok"})
+	case "/proxy/books":
+		// 代理获取图书列表
+		resp, err := http.Get("http://localhost:5000/library/books")
+		if err != nil {
+			wr.WriteHeader(http.StatusBadGateway)
+			return
+		}
+		defer resp.Body.Close()
+		wr.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(wr).Encode(resp.Body)
+	case "/proxy/borrow":
+		// 代理获取借阅记录
+		resp, err := http.Get("http://localhost:5000/library/borrow")
+		if err != nil {
+			wr.WriteHeader(http.StatusBadGateway)
+			return
+		}
+		defer resp.Body.Close()
+		wr.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(wr).Encode(resp.Body)
 	default:
 		http.NotFound(wr, r)
 	}
