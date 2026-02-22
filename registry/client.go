@@ -23,3 +23,19 @@ func RegistrationService(r Registration) error {
 	}
 	return nil
 }
+
+func ShutdownService(url string) error {
+	req, err := http.NewRequest(http.MethodDelete, ServiceUrl, bytes.NewBuffer([]byte(url)))
+	if err != nil {
+		return err
+	}
+	req.Header.Add("Content-Type", "text/plain")
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return err
+	}
+	if res.StatusCode != http.StatusOK {
+		return fmt.Errorf("failed to shutdown service:%v", res.Status)
+	}
+	return nil
+}
