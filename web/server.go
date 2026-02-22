@@ -241,7 +241,7 @@ type web struct{}
 
 func (w webServer) ServeHTTP(wr http.ResponseWriter, r *http.Request) {
 	switch r.URL.Path {
-	case "/":
+	case "/", "/web":
 		// 返回Web页面
 		t, err := template.New("web").Parse(webPage)
 		if err != nil {
