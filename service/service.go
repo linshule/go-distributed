@@ -5,15 +5,21 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+
+	"github.com/linshule/go-distributed/registry"
 )
 
-func Start(ctx context.Context, serviceName, host, port string, registerHandlersFunc func()) (context.Context, error) {
+func Start(ctx context.Context, host, port string, reg registry.Registration, registerHandlersFunc func()) (context.Context, error) {
 	registerHandlersFunc()
-	ctx = startServer(ctx, serviceName, host, port)
+	ctx = startServer(ctx, reg.ServiceName, host, port)
+	err := registry.RegistrationService(reg)
+	if err != nil {
+		return ctx, err
+	}
 	return ctx, nil
 }
 
-func startServer(ctx context.Context, serviceName, host, port string) context.Context {
+func startServer(ctx context.Context, serviceName registry.ServiceName, host, port string) context.Context {
 	ctx, cancel := context.WithCancel(ctx)
 	var srv http.Server
 	srv.Addr = host + ":" + port
