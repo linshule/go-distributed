@@ -9,8 +9,6 @@ import (
 	"github.com/linshule/go-distributed/registry"
 )
 
-type webServer struct{}
-
 var webPage = `
 <!DOCTYPE html>
 <html>
@@ -237,65 +235,75 @@ var webPage = `
 </html>
 `
 
-type web struct{}
+// RegisterHandlers 注册HTTP处理器
+func RegisterHandlers() {
+	http.HandleFunc("/", serveHTTP)
+}
 
-func (w webServer) ServeHTTP(wr http.ResponseWriter, r *http.Request) {
-	switch r.URL.Path {
-	case "/", "/web":
-		// 返回Web页面
+func serveHTTP(w http.ResponseWriter, r *http.Request) {
+	path := r.URL.Path
+
+	// 处理根路径和/web路径
+	if path == "/" || path == "/web" {
 		t, err := template.New("web").Parse(webPage)
 		if err != nil {
 			log.Println(err)
-			wr.WriteHeader(http.StatusInternalServerError)
+			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		t.Execute(wr, nil)
-	case "/services":
-		// 代理到注册中心获取服务列表
+		t.Execute(w, nil)
+		return
+	}
+
+	// 处理/services路径
+	if path == "/services" {
 		regs, err := registry.GetServices()
 		if err != nil {
 			log.Println(err)
-			wr.WriteHeader(http.StatusInternalServerError)
+			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		wr.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(wr).Encode(regs)
-	case "/proxy/log":
-		// 代理日志服务
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(regs)
+		return
+	}
+
+	// 处理代理路径
+	if path == "/proxy/log" {
 		resp, err := http.Post("http://localhost:4000/log", "text/plain", r.Body)
 		if err != nil {
-			wr.WriteHeader(http.StatusBadGateway)
+			w.WriteHeader(http.StatusBadGateway)
 			return
 		}
 		defer resp.Body.Close()
-		wr.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(wr).Encode(map[string]string{"status": "ok"})
-	case "/proxy/books":
-		// 代理获取图书列表
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
+		return
+	}
+
+	if path == "/proxy/books" {
 		resp, err := http.Get("http://localhost:5000/library/books")
 		if err != nil {
-			wr.WriteHeader(http.StatusBadGateway)
+			w.WriteHeader(http.StatusBadGateway)
 			return
 		}
 		defer resp.Body.Close()
-		wr.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(wr).Encode(resp.Body)
-	case "/proxy/borrow":
-		// 代理获取借阅记录
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(resp.Body)
+		return
+	}
+
+	if path == "/proxy/borrow" {
 		resp, err := http.Get("http://localhost:5000/library/borrow")
 		if err != nil {
-			wr.WriteHeader(http.StatusBadGateway)
+			w.WriteHeader(http.StatusBadGateway)
 			return
 		}
 		defer resp.Body.Close()
-		wr.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(wr).Encode(resp.Body)
-	default:
-		http.NotFound(wr, r)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(resp.Body)
+		return
 	}
-}
 
-// RegisterHandlers 注册HTTP处理器
-func RegisterHandlers() {
-	http.Handle("/web", &webServer{})
+	http.NotFound(w, r)
 }
