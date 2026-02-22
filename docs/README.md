@@ -79,7 +79,7 @@ JSON是一种常用的数据格式，用于前后端数据交换。
 ## 3. 项目结构
 
 ```
-fenbushi/                          # 项目根目录
+go-distributed/                          # 项目根目录
 ├── go.mod                         # Go模块配置文件
 ├── cmd/                           # 程序入口目录
 │   ├── registryservice/
@@ -174,7 +174,7 @@ type Registration struct {
 
 ```bash
 git clone <仓库地址>
-cd fenbushi
+cd go-distributed
 ```
 
 ### 5.2 启动服务注册中心
