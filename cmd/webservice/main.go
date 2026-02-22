@@ -14,8 +14,15 @@ func main() {
 	host, port := "localhost", "5002"
 	serviceAddress := fmt.Sprintf("http://%s:%s", host, port)
 	r := registry.Registration{
-		ServiceName: "WebService",
-		ServiceUrl:  serviceAddress,
+		ServiceName:    registry.WebService,
+		ServiceUrl:     serviceAddress,
+		ServiceVersion: "1.0.0",
+		Metadata: map[string]string{
+			"description": "Web management interface",
+			"uiPath":      "/web",
+		},
+		Tags:           []string{"ui", "management"},
+		HealthCheckURL: serviceAddress,
 	}
 	ctx, err := service.Start(context.Background(), host, port, r, web.RegisterHandlers)
 	if err != nil {

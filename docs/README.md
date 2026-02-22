@@ -135,6 +135,8 @@ go-distributed/                          # 项目根目录
 │   ├── registration.go           # 服务注册数据结构
 │   ├── server.go                 # 注册中心服务端
 │   └── client.go                 # 注册中心客户端
+├── discovery/                    # 服务发现模块
+│   └── discovery.go              # 高级服务发现功能
 ├── log/                           # 日志服务模块
 │   └── server.go                 # 日志服务实现
 ├── library/                       # 图书馆服务模块
@@ -148,7 +150,8 @@ go-distributed/                          # 项目根目录
 ├── service/                       # 通用服务模块
 │   └── service.go                # 服务启动辅助函数
 └── docs/                          # 文档目录
-    └── README.md                  # 本文档
+    ├── README.md                  # 主文档
+    └── service-discovery.md      # 服务发现功能说明
 ```
 
 ### 3.1 各文件作用
@@ -183,6 +186,7 @@ go-distributed/                          # 项目根目录
 - 启动时监听 3000 端口
 - 维护一份"服务清单"
 - 接收服务注册（POST）和注销（DELETE）请求
+- 提供服务查询和健康检查功能
 
 ### 4.2 服务注册 (Registration)
 
@@ -190,10 +194,26 @@ go-distributed/                          # 项目根目录
 
 ```go
 type Registration struct {
-    ServiceName string   // 服务名称，如 "LogService"
-    ServiceUrl  string   // 服务地址，如 "http://localhost:4000"
+    ServiceName    string            // 服务名称，如 "LogService"
+    ServiceUrl     string            // 服务地址，如 "http://localhost:4000"
+    ServiceVersion string            // 服务版本
+    Metadata       map[string]string // 元数据
+    Tags           []string         // 标签
+    HealthCheckURL string            // 健康检查地址
 }
 ```
+
+### 4.3 服务发现 (Service Discovery)
+
+**作用**：让服务能够动态发现其他服务的地址。
+
+- 按名称查找服务
+- 按标签分组查询
+- 健康检查和负载均衡
+- 服务变化通知（发布/订阅模式）
+- 客户端缓存减少请求
+
+详细功能请参考 [服务发现文档](service-discovery.md)。
 
 ### 4.3 日志服务 (Log Service)
 
@@ -578,6 +598,11 @@ type ServiceStatus struct {
 |------|------|------|
 | POST | /services | 注册新服务 |
 | DELETE | /services | 注销服务 |
+| GET | /services | 获取所有服务 |
+| GET | /services/{name} | 按名称查询服务 |
+| GET | /services/tag/{tag} | 按标签查询服务 |
+| GET | /health | 注册中心健康检查 |
+| GET | /health/{name} | 服务健康检查 |
 
 **注册服务请求体**：
 ```json

@@ -14,8 +14,15 @@ func main() {
 	host, port := "localhost", "5003"
 	serviceAddress := fmt.Sprintf("http://%s:%s", host, port)
 	r := registry.Registration{
-		ServiceName: "MonitorService",
-		ServiceUrl:  serviceAddress,
+		ServiceName:    registry.MonitorService,
+		ServiceUrl:     serviceAddress,
+		ServiceVersion: "1.0.0",
+		Metadata: map[string]string{
+			"description": "Service health monitoring",
+			"checkInterval": "30s",
+		},
+		Tags:           []string{"monitoring", "health"},
+		HealthCheckURL: serviceAddress,
 	}
 	ctx, err := service.Start(context.Background(), host, port, r, monitor.RegisterHandlers)
 	if err != nil {

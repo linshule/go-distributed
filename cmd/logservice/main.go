@@ -15,8 +15,15 @@ func main() {
 	host, port := "localhost", "4000"
 	serviceAddress := fmt.Sprintf("http://%s:%s", host, port)
 	r := registry.Registration{
-		ServiceName: "Log Service",
-		ServiceUrl:  serviceAddress,
+		ServiceName:    registry.LogService,
+		ServiceUrl:     serviceAddress,
+		ServiceVersion: "1.0.0",
+		Metadata: map[string]string{
+			"description": "Centralized logging service",
+			"logFile":     "./distributed.log",
+		},
+		Tags:           []string{"logging", "core"},
+		HealthCheckURL: serviceAddress,
 	}
 	ctx, err := service.Start(context.Background(), host, port, r, log.RegisterHandlers)
 	if err != nil {
