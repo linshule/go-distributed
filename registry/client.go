@@ -39,3 +39,35 @@ func ShutdownService(url string) error {
 	}
 	return nil
 }
+
+// GetServices 获取所有已注册的服务
+func GetServices() ([]Registration, error) {
+	res, err := http.Get(ServiceUrl)
+	if err != nil {
+		return nil, err
+	}
+	if res.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("failed to get services:%v", res.Status)
+	}
+	defer res.Body.Close()
+	var regs []Registration
+	err = json.NewDecoder(res.Body).Decode(&regs)
+	if err != nil {
+		return nil, err
+	}
+	return regs, nil
+}
+
+// FindService 根据服务名称查找服务
+func FindService(serviceName ServiceName) (Registration, error) {
+	regs, err := GetServices()
+	if err != nil {
+		return Registration{}, err
+	}
+	for _, reg := range regs {
+		if reg.ServiceName == serviceName {
+			return reg, nil
+		}
+	}
+	return Registration{}, fmt.Errorf("service %s not found", serviceName)
+}

@@ -25,15 +25,23 @@ func (r *registry) add(reg Registration) error {
 }
 
 func (r *registry) remove(url string) error {
-	for i := range reg.registrations {
-		if reg.registrations[i].ServiceUrl == url {
-			r.mutex.Lock()
-			reg.registrations = append(reg.registrations[:i], reg.registrations[i+1:]...)
-			r.mutex.Unlock()
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+	for i := range r.registrations {
+		if r.registrations[i].ServiceUrl == url {
+			r.registrations = append(r.registrations[:i], r.registrations[i+1:]...)
 			return nil
 		}
 	}
 	return fmt.Errorf("Service at %s not found", url)
+}
+
+func (r *registry) getRegistrations() []Registration {
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+	result := make([]Registration, len(r.registrations))
+	copy(result, r.registrations)
+	return result
 }
 
 var reg = registry{
@@ -77,6 +85,10 @@ func (s RegistryService) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
+	case http.MethodGet:
+		w.Header().Set("Content-Type", "application/json")
+		regs := reg.getRegistrations()
+		json.NewEncoder(w).Encode(regs)
 	default:
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
